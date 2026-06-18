@@ -54,7 +54,19 @@ type BlockNode =
   | { type: "heading"; level: number; content: string }
   | { type: "hr" }
   | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "paragraph"; content: string };
+
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+const TABLE_SEP = /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/;
+
+function parseTableRow(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\||\|$/g, "")
+    .split("|")
+    .map((c) => c.trim());
+}
 
 /* ------------------------------------------------------------------ */
 /*  Block parser                                                       */
@@ -124,6 +136,23 @@ function parseBlocks(text: string): BlockNode[] {
       continue;
     }
 
+    // Table — header row + separator row + body rows
+    if (
+      TABLE_ROW.test(line) &&
+      i + 1 < lines.length &&
+      TABLE_SEP.test(lines[i + 1])
+    ) {
+      const headers = parseTableRow(line);
+      i += 2; // skip header + separator
+      const rows: string[][] = [];
+      while (i < lines.length && TABLE_ROW.test(lines[i])) {
+        rows.push(parseTableRow(lines[i]));
+        i++;
+      }
+      blocks.push({ type: "table", headers, rows });
+      continue;
+    }
+
     // Empty line
     if (line.trim() === "") {
       i++;
@@ -139,7 +168,8 @@ function parseBlocks(text: string): BlockNode[] {
       !lines[i].match(/^#{1,4}\s/) &&
       !lines[i].match(/^[-*+]\s/) &&
       !lines[i].match(/^\d+[.)]\s/) &&
-      !lines[i].match(/^[-*_]{3,}\s*$/)
+      !lines[i].match(/^[-*_]{3,}\s*$/) &&
+      !TABLE_ROW.test(lines[i])
     ) {
       paraLines.push(lines[i]);
       i++;
@@ -191,6 +221,34 @@ function Block({
         </Tag>
       );
     }
+
+    case "table":
+      return (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                {block.headers.map((h, i) => (
+                  <th key={i} className="px-2 py-1.5 text-left font-semibold">
+                    <InlineContent text={h} highlightTerms={highlightTerms} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, ri) => (
+                <tr key={ri} className="border-b border-border/50">
+                  {block.headers.map((_, ci) => (
+                    <td key={ci} className="px-2 py-1.5 align-top">
+                      <InlineContent text={row[ci] ?? ""} highlightTerms={highlightTerms} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
 
     case "hr":
       return (

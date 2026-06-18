@@ -299,7 +299,91 @@ export const defaultLargeTheme: DashboardTheme = {
   },
 };
 
+/**
+ * RoleFit — the premium, Apple-inspired LIGHT theme.
+ *
+ * This is the default theme the app loads. It paints a soft cool off-white
+ * canvas with graphite near-black ink, then makes every surface (card,
+ * popover, secondary) a TRANSLUCENT white so the Liquid-Glass CSS layer in
+ * `index.css` can frost them with `backdrop-filter`.
+ *
+ * Unlike `nous-blue` this theme does NOT rely on the `<Backdrop />`
+ * foreground-inversion trick — `foreground.alpha` stays 0 so that layer is a
+ * no-op. The canvas is painted directly (light bg + dark midground), and a
+ * dedicated `body[data-theme="rolefit"]`-style rule in `index.css` hides the
+ * dark `.theme-default-filler` and paints the soft light mesh gradient.
+ *
+ * Color language:
+ *   ink            #1d1d1f  (graphite near-black text → midground)
+ *   secondary ink  #6e6e73  (Apple secondary gray, derived via midground 80%)
+ *   canvas         #f5f5f7  (Apple soft cool off-white → background)
+ *   primary        #1d1d1f  (dark graphite buttons, Apple style)
+ *   accent / ring  #0071e3  (Apple system blue — links/focus/active)
+ *   success        #1d8a3f
+ *   warning        #b25000
+ *   destructive    #d70015
+ */
+export const rolefitTheme: DashboardTheme = {
+  name: "rolefit",
+  label: "RoleFit",
+  description: "Premium Apple-style light theme with Liquid Glass surfaces",
+  palette: {
+    // Soft cool off-white canvas. Pure white kills the glass effect, so we
+    // keep a faint cool tint; the CSS mesh gradient on <body> adds the rest.
+    background: { hex: "#f5f5f7", alpha: 1 },
+    // Graphite near-black ink — drives text, borders, muted surfaces.
+    midground: { hex: "#1d1d1f", alpha: 1 },
+    // Inversion layer disabled (alpha 0) — we paint light directly.
+    foreground: { hex: "#ffffff", alpha: 0 },
+    // Very soft cool glow so the warm-vignette layer stays barely-there.
+    warmGlow: "rgba(0, 113, 227, 0.05)",
+    // No grain — Apple surfaces are clean.
+    noiseOpacity: 0,
+  },
+  typography: {
+    fontSans:
+      '"Inter", -apple-system, "SF Pro Display", "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif',
+    fontMono:
+      'ui-monospace, "SF Mono", "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace',
+    baseSize: "16px",
+    lineHeight: "1.55",
+    letterSpacing: "-0.011em",
+  },
+  layout: {
+    radius: "1rem",
+    density: "comfortable",
+  },
+  terminalBackground: "#ffffff",
+  // Translucent surfaces so the Liquid-Glass CSS can frost them. The blur +
+  // hairline + highlight live in index.css; these set the base tint/alpha.
+  colorOverrides: {
+    card: "rgba(255, 255, 255, 0.62)",
+    cardForeground: "#1d1d1f",
+    popover: "rgba(255, 255, 255, 0.78)",
+    popoverForeground: "#1d1d1f",
+    secondary: "rgba(255, 255, 255, 0.55)",
+    secondaryForeground: "#1d1d1f",
+    muted: "rgba(29, 29, 31, 0.045)",
+    mutedForeground: "#6e6e73",
+    accent: "#0071e3",
+    accentForeground: "#ffffff",
+    primary: "#1d1d1f",
+    primaryForeground: "#ffffff",
+    // Status colors tuned for a light canvas (WCAG-AA on white).
+    success: "#1d8a3f",
+    warning: "#b25000",
+    destructive: "#d70015",
+    destructiveForeground: "#ffffff",
+    // Calm hairline borders + Apple-blue focus ring.
+    border: "rgba(29, 29, 31, 0.10)",
+    input: "rgba(29, 29, 31, 0.12)",
+    ring: "#0071e3",
+  },
+  swatchColors: ["#1d1d1f", "#0071e3", "#f5f5f7"],
+};
+
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
+  rolefit: rolefitTheme,
   default: defaultTheme,
   "default-large": defaultLargeTheme,
   "nous-blue": nousBlueTheme,

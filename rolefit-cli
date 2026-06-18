@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# RoleFit CLI wrapper — always uses the project venv (httpx/python-docx) and finds
+# the `rolefit` package regardless of the caller's cwd. The main agent invokes this.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec env PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}" "$HERE/.venv/bin/python" -m rolefit.cli "$@"

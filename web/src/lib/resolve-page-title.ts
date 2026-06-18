@@ -21,6 +21,10 @@ export function resolvePageTitle(
   pluginTabs: { path: string; label: string }[],
 ): string {
   const normalized = pathname.replace(/\/$/, "") || "/";
+  // RoleFit operator agent — branded "RolePilot" (route stays /rolepilot internally).
+  if (normalized === "/rolepilot" || normalized.startsWith("/rolepilot/")) {
+    return "RolePilot";
+  }
   if (normalized === "/") {
     return t.app.nav.sessions;
   }
