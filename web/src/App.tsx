@@ -21,7 +21,6 @@ import {
 import {
   Activity,
   BarChart3,
-  BookOpen,
   Clock,
   Code,
   Cpu,
@@ -38,22 +37,25 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
-  Plug,
   Puzzle,
-  Radio,
   RotateCw,
   Settings,
   Shield,
-  ShieldCheck,
   Sparkles,
   Star,
   Terminal,
   Users,
-  Webhook,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
+import {
+  Sparkle as PhSparkle,
+  IdentificationCard as PhIdentificationCard,
+  Briefcase as PhBriefcase,
+  Target as PhTarget,
+  Kanban as PhKanban,
+} from "@phosphor-icons/react";
 import { Button } from "@nous-research/ui/ui/components/button";
 import { SelectionSwitcher } from "@nous-research/ui/ui/components/selection-switcher";
 import { Spinner } from "@nous-research/ui/ui/components/spinner";
@@ -67,6 +69,7 @@ import { useSidebarStatus } from "@/hooks/useSidebarStatus";
 import { AuthWidget } from "@/components/AuthWidget";
 import { PageHeaderProvider } from "@/contexts/PageHeaderProvider";
 import { ProfileProvider } from "@/contexts/ProfileProvider";
+import { ChatProvider } from "@/contexts/ChatProvider";
 import { useProfileScope } from "@/contexts/useProfileScope";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { ProfileScopeBanner } from "@/components/ProfileScopeBanner";
@@ -77,6 +80,11 @@ import DocsPage from "@/pages/DocsPage";
 import EnvPage from "@/pages/EnvPage";
 import FilesPage from "@/pages/FilesPage";
 import SessionsPage from "@/pages/SessionsPage";
+import ApplicantsPage from "@/pages/ApplicantsPage";
+import JobsPage from "@/pages/JobsPage";
+import MatchesPage from "@/pages/MatchesPage";
+import ApplicationsPage from "@/pages/ApplicationsPage";
+import SetupChatPage from "@/pages/SetupChatPage";
 import LogsPage from "@/pages/LogsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ModelsPage from "@/pages/ModelsPage";
@@ -103,7 +111,7 @@ import { api } from "@/lib/api";
 import type { StatusResponse } from "@/lib/api";
 
 function RootRedirect() {
-  return <Navigate to="/sessions" replace />;
+  return <Navigate to="/rolepilot" replace />;
 }
 
 function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
@@ -111,15 +119,18 @@ function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
     // Render nothing during the plugin-load window — a spinner here would just flash.
     return null;
   }
-  return <Navigate to="/sessions" replace />;
+  return <Navigate to="/rolepilot" replace />;
 }
 
-const CHAT_NAV_ITEM: NavItem = {
-  path: "/chat",
-  labelKey: "chat",
-  label: "Chat",
-  icon: Terminal,
-};
+// Hidden from the RoleFit sidebar. The /chat route + persistent ChatPage
+// host are untouched; this nav entry is just no longer surfaced. Kept
+// (commented) rather than deleted so it's trivial to restore.
+// const CHAT_NAV_ITEM: NavItem = {
+//   path: "/chat",
+//   labelKey: "chat",
+//   label: "Chat",
+//   icon: Terminal,
+// };
 
 /**
  * Built-in routes except /chat.  Chat is rendered persistently (outside
@@ -132,6 +143,12 @@ const CHAT_NAV_ITEM: NavItem = {
  */
 const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
   "/": RootRedirect,
+  "/applicants": ApplicantsPage,
+  "/jobs": JobsPage,
+  "/matches": MatchesPage,
+  "/applications": ApplicationsPage,
+  "/rolepilot": SetupChatPage,
+  "/rolepilot/:sessionId": SetupChatPage,
   "/sessions": SessionsPage,
   "/files": FilesPage,
   "/analytics": AnalyticsPage,
@@ -160,44 +177,61 @@ function ChatRouteSink() {
   return null;
 }
 
+/**
+ * RoleFit sidebar nav — ONLY the five product surfaces are shown:
+ * Maestro, Applicants, Jobs, Matches, Applications.
+ *
+ * Every other Hermes tab (Chat, Sessions, Files, Models, Logs, Cron,
+ * Skills, Plugins, MCP, Channels, Webhooks, Pairing, Profiles, Analytics,
+ * Env, Config, Docs, System) is intentionally kept out of the visible nav
+ * but is NOT deleted — its route stays registered in BUILTIN_ROUTES_CORE
+ * and its page import is untouched, so deep-links still resolve. The hidden
+ * entries are preserved below (commented) for reference / easy restore.
+ */
 const BUILTIN_NAV_REST: NavItem[] = [
-  {
-    path: "/sessions",
-    labelKey: "sessions",
-    label: "Sessions",
-    icon: MessageSquare,
-  },
-  { path: "/files", label: "Files", icon: FolderOpen },
-  {
-    path: "/analytics",
-    labelKey: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-  },
-  {
-    path: "/models",
-    labelKey: "models",
-    label: "Models",
-    icon: Cpu,
-  },
-  { path: "/logs", labelKey: "logs", label: "Logs", icon: FileText },
-  { path: "/cron", labelKey: "cron", label: "Cron", icon: Clock },
-  { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
-  { path: "/plugins", labelKey: "plugins", label: "Plugins", icon: Puzzle },
-  { path: "/mcp", label: "MCP", icon: Plug },
-  { path: "/channels", label: "Channels", icon: Radio },
-  { path: "/webhooks", label: "Webhooks", icon: Webhook },
-  { path: "/pairing", label: "Pairing", icon: ShieldCheck },
-  { path: "/profiles", labelKey: "profiles", label: "Profiles", icon: Users },
-  { path: "/config", labelKey: "config", label: "Config", icon: Settings },
-  { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
-  { path: "/system", label: "System", icon: Wrench },
-  {
-    path: "/docs",
-    labelKey: "documentation",
-    label: "Documentation",
-    icon: BookOpen,
-  },
+  { path: "/rolepilot", label: "RolePilot", icon: PhSparkle },
+  { path: "/applicants", label: "Applicants", icon: PhIdentificationCard },
+  { path: "/jobs", label: "Jobs", icon: PhBriefcase },
+  { path: "/matches", label: "Matches", icon: PhTarget },
+  { path: "/applications", label: "Applications", icon: PhKanban },
+  // --- Hidden from RoleFit nav (routes still registered) ---
+  // {
+  //   path: "/sessions",
+  //   labelKey: "sessions",
+  //   label: "Sessions",
+  //   icon: MessageSquare,
+  // },
+  // { path: "/files", label: "Files", icon: FolderOpen },
+  // {
+  //   path: "/analytics",
+  //   labelKey: "analytics",
+  //   label: "Analytics",
+  //   icon: BarChart3,
+  // },
+  // {
+  //   path: "/models",
+  //   labelKey: "models",
+  //   label: "Models",
+  //   icon: Cpu,
+  // },
+  // { path: "/logs", labelKey: "logs", label: "Logs", icon: FileText },
+  // { path: "/cron", labelKey: "cron", label: "Cron", icon: Clock },
+  // { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
+  // { path: "/plugins", labelKey: "plugins", label: "Plugins", icon: Puzzle },
+  // { path: "/mcp", label: "MCP", icon: Plug },
+  // { path: "/channels", label: "Channels", icon: Radio },
+  // { path: "/webhooks", label: "Webhooks", icon: Webhook },
+  // { path: "/pairing", label: "Pairing", icon: ShieldCheck },
+  // { path: "/profiles", labelKey: "profiles", label: "Profiles", icon: Users },
+  // { path: "/config", labelKey: "config", label: "Config", icon: Settings },
+  // { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
+  // { path: "/system", label: "System", icon: Wrench },
+  // {
+  //   path: "/docs",
+  //   labelKey: "documentation",
+  //   label: "Documentation",
+  //   icon: BookOpen,
+  // },
 ];
 
 const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
@@ -377,6 +411,11 @@ export default function App() {
   const isDocsRoute = pathname === "/docs" || pathname === "/docs/";
   const normalizedPath = pathname.replace(/\/$/, "") || "/";
   const isChatRoute = normalizedPath === "/chat";
+  // /rolepilot is also a full-height chat surface (pinned composer, internal scroll)
+  // for LAYOUT only — it does not render the legacy PTY ChatPage.
+  const isMaestroRoute =
+    normalizedPath === "/rolepilot" || normalizedPath.startsWith("/rolepilot/");
+  const isFullHeightRoute = isChatRoute || isMaestroRoute;
   const embeddedChat = isDashboardEmbeddedChatEnabled();
 
   // `dashboard.show_token_analytics` gates the Analytics nav item.  The
@@ -427,12 +466,14 @@ export default function App() {
   );
 
   const builtinNav = useMemo(() => {
-    const base = embeddedChat
-      ? [CHAT_NAV_ITEM, ...BUILTIN_NAV_REST]
-      : BUILTIN_NAV_REST;
+    // RoleFit hides the Chat tab from the sidebar (CHAT_NAV_ITEM) — the
+    // /chat route still mounts via the persistent host when embedded chat
+    // is on, it's just not surfaced in the nav. Analytics is gated as
+    // before (already absent from BUILTIN_NAV_REST here).
+    void embeddedChat;
     return showTokenAnalytics
-      ? base
-      : base.filter((n) => n.path !== "/analytics");
+      ? BUILTIN_NAV_REST
+      : BUILTIN_NAV_REST.filter((n) => n.path !== "/analytics");
   }, [embeddedChat, showTokenAnalytics]);
 
   const sidebarNav = useMemo(
@@ -514,10 +555,7 @@ export default function App() {
           <Menu />
         </Button>
 
-        <Typography
-          className="font-bold text-[0.95rem] leading-[0.95] tracking-[0.05em] text-midground"
-          style={{ mixBlendMode: "plus-lighter" }}
-        >
+        <Typography className="text-[1.05rem] font-semibold leading-none tracking-[-0.02em] text-foreground">
           {t.app.brand}
         </Typography>
       </header>
@@ -539,6 +577,10 @@ export default function App() {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
         <div className="flex min-h-0 min-w-0 flex-1">
+          {/* RoleFit replaces the Hermes left sidebar with a floating macOS-style
+              dock (see <RoleFitDock/> below). The sidebar is hidden, not deleted —
+              flip this to true to restore the original rail. */}
+          {false && (
           <aside
             id="app-sidebar"
             aria-label={t.app.navigation}
@@ -573,13 +615,8 @@ export default function App() {
               >
                 <PluginSlot name="header-left" />
 
-                <Typography
-                  className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase"
-                  style={{ mixBlendMode: "plus-lighter" }}
-                >
-                  Hermes
-                  <br />
-                  Agent
+                <Typography className="text-[1.25rem] font-semibold leading-none tracking-[-0.02em] text-foreground">
+                  RoleFit
                 </Typography>
               </div>
 
@@ -610,7 +647,9 @@ export default function App() {
               </Button>
             </div>
 
-            <ProfileSwitcher collapsed={isDesktopCollapsed} />
+            {/* RoleFit is a single-team product — the Hermes dashboard/profile
+                switcher is hidden (not deleted) to keep the chrome calm. */}
+            {false && <ProfileSwitcher collapsed={isDesktopCollapsed} />}
 
             <nav
               className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden border-t border-current/10 py-2"
@@ -629,7 +668,10 @@ export default function App() {
                 ))}
               </ul>
 
-              {sidebarNav.pluginItems.length > 0 && (
+              {/* RoleFit hides the Hermes "Plugins" nav section (Achievements,
+                  Kanban, …) from the sidebar — routes stay registered, just
+                  not surfaced. Flip `false` to restore. */}
+              {false && sidebarNav.pluginItems.length > 0 && (
                 <div
                   aria-labelledby="hermes-sidebar-plugin-nav-heading"
                   className="flex flex-col border-t border-current/10 pb-2"
@@ -662,6 +704,10 @@ export default function App() {
               )}
             </nav>
 
+            {/* RoleFit tones down the Hermes system-action clutter: the
+                "Restart Gateway"/"Update Hermes" actions are hidden inside
+                SidebarSystemActions (see SHOW_SYSTEM_ACTIONS), leaving only
+                a calm gateway-status indicator. Nothing is deleted. */}
             <SidebarSystemActions
               collapsed={isDesktopCollapsed}
               onNavigate={closeMobile}
@@ -687,13 +733,17 @@ export default function App() {
               >
                 <PluginSlot name="header-right" />
 
-                <SidebarIconWithTooltip
-                  collapsed={isDesktopCollapsed}
-                  label={t.theme?.switchTheme ?? "Switch theme"}
-                  tooltipWarmRef={tooltipWarmRef}
-                >
-                  <ThemeSwitcher collapsed={isDesktopCollapsed} dropUp />
-                </SidebarIconWithTooltip>
+                {/* RoleFit ships one premium-light theme — the theme switcher
+                    is hidden (not deleted) so the look stays consistent. */}
+                {false && (
+                  <SidebarIconWithTooltip
+                    collapsed={isDesktopCollapsed}
+                    label={t.theme?.switchTheme ?? "Switch theme"}
+                    tooltipWarmRef={tooltipWarmRef}
+                  >
+                    <ThemeSwitcher collapsed={isDesktopCollapsed} dropUp />
+                  </SidebarIconWithTooltip>
+                )}
 
                 <SidebarIconWithTooltip
                   collapsed={isDesktopCollapsed}
@@ -715,15 +765,18 @@ export default function App() {
               <SidebarFooter status={sidebarStatus} />
             </div>
           </aside>
+          )}
 
+          <ChatProvider>
           <PageHeaderProvider pluginTabs={pluginTabMeta}>
             <div
               className={cn(
                 "relative z-2 flex min-w-0 min-h-0 flex-1 flex-col",
                 "px-3 sm:px-6",
-                isChatRoute
-                  ? "pb-0 pt-1 sm:pt-2 lg:pt-4"
-                  : "pt-2 sm:pt-4 lg:pt-6",
+                // Bottom space reserved so the floating dock never covers content.
+                isFullHeightRoute
+                  ? "pb-28 pt-1 sm:pt-2 lg:pt-4"
+                  : "pb-28 pt-2 sm:pt-4 lg:pt-6",
                 isDocsRoute && "min-h-0 flex-1",
               )}
             >
@@ -731,9 +784,9 @@ export default function App() {
               <div
                 className={cn(
                   "w-full min-w-0",
-                  !isChatRoute &&
+                  !isFullHeightRoute &&
                     "pb-[calc(2rem+env(safe-area-inset-bottom,0px))] lg:pb-8",
-                  (isDocsRoute || isChatRoute) &&
+                  (isDocsRoute || isFullHeightRoute) &&
                     "min-h-0 flex flex-1 flex-col",
                 )}
               >
@@ -782,12 +835,76 @@ export default function App() {
               <PluginSlot name="post-main" />
             </div>
           </PageHeaderProvider>
+          </ChatProvider>
         </div>
       </div>
 
+      <RoleFitDock items={sidebarNav.coreItems} />
       <PluginSlot name="overlay" />
     </div>
     </ProfileProvider>
+  );
+}
+
+/**
+ * RoleFit's primary navigation — a floating, macOS-style glass dock pinned to
+ * the bottom-center of the viewport. Replaces the old Hermes left rail (hidden
+ * above). Icon + label per destination; the active route reads in Apple-blue
+ * with a soft tint; items lift on hover. Honors reduced-motion via CSS.
+ */
+function RoleFitDock({ items }: { items: NavItem[] }) {
+  return (
+    <nav
+      aria-label="Primary"
+      className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4"
+    >
+      <div
+        className="pointer-events-auto flex items-end gap-1 rounded-[26px] border border-glass-hairline bg-card/70 px-2.5 py-2 backdrop-blur-2xl"
+        style={{ boxShadow: "var(--rf-e3)" }}
+      >
+        {items.map((item) => {
+          const Icon = item.icon as ComponentType<{
+            className?: string;
+            weight?: "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+          }>;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              title={item.label}
+              className={({ isActive }) =>
+                cn(
+                  "group relative flex w-[68px] flex-col items-center gap-1 rounded-[18px] px-2 py-2",
+                  "transition-all duration-200 will-change-transform",
+                  "hover:-translate-y-0.5",
+                  isActive
+                    ? "bg-accent/10 text-accent"
+                    : "text-text-secondary hover:bg-muted/50 hover:text-foreground",
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    className="size-[22px] transition-transform duration-200 group-hover:scale-110"
+                    weight={isActive ? "fill" : "regular"}
+                  />
+                  <span className="text-[11px] font-medium leading-none tracking-[-0.01em]">
+                    {item.label}
+                  </span>
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-accent"
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -843,14 +960,14 @@ function SidebarNavLink({
         onBlur={collapsed ? hideTooltip : undefined}
         className={({ isActive }) =>
           cn(
-            "group/nav relative flex items-center gap-3",
-            "px-5 py-2.5",
-            "font-mondwest text-display uppercase text-sm tracking-[0.12em]",
+            "group/nav relative mx-2 flex items-center gap-3 rounded-xl",
+            "px-3.5 py-2.5",
+            "text-sm tracking-[-0.01em]",
             "whitespace-nowrap transition-colors cursor-pointer",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-midground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             isActive
-              ? "text-midground"
-              : "text-text-secondary hover:text-midground",
+              ? "bg-accent/10 text-accent font-semibold"
+              : "font-medium text-text-secondary hover:bg-muted/40 hover:text-foreground",
           )
         }
         style={{
@@ -859,7 +976,7 @@ function SidebarNavLink({
       >
         {({ isActive }) => (
           <>
-            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <Icon className="h-4 w-4 shrink-0" />
 
             <span
               className={cn(
@@ -870,16 +987,11 @@ function SidebarNavLink({
               {navLabel}
             </span>
 
-            <span
-              aria-hidden
-              className="absolute inset-y-0.5 left-1.5 right-1.5 bg-midground opacity-0 pointer-events-none transition-opacity duration-200 group-hover/nav:opacity-5"
-            />
-
+            {/* Apple-blue active rail (2px) — calm, reads on the light canvas. */}
             {isActive && (
               <span
                 aria-hidden
-                className="absolute left-0 top-0 bottom-0 w-px bg-midground"
-                style={{ mixBlendMode: "plus-lighter" }}
+                className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-accent"
               />
             )}
           </>
@@ -939,39 +1051,52 @@ function SidebarSystemActions({
         "py-1",
       )}
     >
-      <span
-        className={cn(
-          "px-5 pt-0.5 pb-0.5",
-          "font-mondwest text-display text-xs tracking-[0.12em] text-text-tertiary",
-          collapsed && "lg:hidden",
-        )}
-      >
-        {t.app.system}
-      </span>
+      {SHOW_SYSTEM_ACTIONS && (
+        <>
+          <span
+            className={cn(
+              "px-5 pt-0.5 pb-0.5",
+              "font-mondwest text-display text-xs tracking-[0.12em] text-text-tertiary",
+              collapsed && "lg:hidden",
+            )}
+          >
+            {t.app.system}
+          </span>
 
-      <div className={cn(collapsed && "lg:hidden")}>
-        <SidebarStatusStrip status={status} />
-      </div>
+          <div className={cn(collapsed && "lg:hidden")}>
+            <SidebarStatusStrip status={status} />
+          </div>
+        </>
+      )}
 
+      {/* Calm gateway-status indicator stays; the Restart/Update actions
+          are gated off via SHOW_SYSTEM_ACTIONS for the RoleFit chrome. */}
       <GatewayDot collapsed={collapsed} status={status} tooltipWarmRef={tooltipWarmRef} />
 
-      <ul className="flex flex-col">
-        {items.map((item) => (
-          <SystemActionButton
-            key={item.action}
-            collapsed={collapsed}
-            disabled={isBusy && !(pendingAction === item.action || (activeAction === item.action && isRunning))}
-            tooltipWarmRef={tooltipWarmRef}
-            isPending={pendingAction === item.action}
-            isRunning={activeAction === item.action && isRunning && pendingAction !== item.action}
-            item={item}
-            onClick={() => handleClick(item.action)}
-          />
-        ))}
-      </ul>
+      {SHOW_SYSTEM_ACTIONS && (
+        <ul className="flex flex-col">
+          {items.map((item) => (
+            <SystemActionButton
+              key={item.action}
+              collapsed={collapsed}
+              disabled={isBusy && !(pendingAction === item.action || (activeAction === item.action && isRunning))}
+              tooltipWarmRef={tooltipWarmRef}
+              isPending={pendingAction === item.action}
+              isRunning={activeAction === item.action && isRunning && pendingAction !== item.action}
+              item={item}
+              onClick={() => handleClick(item.action)}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
+
+/** RoleFit toggle: hide the Hermes-specific "Restart Gateway" / "Update
+ *  Hermes" actions + the verbose status strip from the sidebar. Flip to
+ *  `true` to restore them. The gateway-status dot stays visible regardless. */
+const SHOW_SYSTEM_ACTIONS = false;
 
 function SystemActionButton({
   collapsed,

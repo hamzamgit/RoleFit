@@ -46,6 +46,7 @@ export function Backdrop() {
     <>
       <div
         aria-hidden
+        data-backdrop-layer
         className="pointer-events-none fixed inset-0 z-[1]"
         style={
           {
@@ -58,6 +59,7 @@ export function Backdrop() {
 
       <div
         aria-hidden
+        data-backdrop-layer
         className="pointer-events-none fixed inset-0 z-[2]"
         style={
           {
@@ -85,6 +87,7 @@ export function Backdrop() {
 
       <div
         aria-hidden
+        data-backdrop-layer
         className="pointer-events-none fixed inset-0 z-[99]"
         style={{
           background:
@@ -111,6 +114,7 @@ export function Backdrop() {
           scan sometimes drops non-default z utilities. */}
       <div
         aria-hidden
+        data-backdrop-layer
         className="pointer-events-none fixed inset-0"
         style={{
           backgroundColor: "var(--foreground)",
@@ -122,6 +126,7 @@ export function Backdrop() {
       {gpuTier > 0 && (
         <div
           aria-hidden
+          data-backdrop-layer
           className="pointer-events-none fixed inset-0 z-[201]"
           style={{
             backgroundImage:

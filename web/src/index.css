@@ -50,37 +50,42 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* LENS_0 — from design-language/src/ui/components/overlays/index.tsx.
-     These are the defaults for the `default` (Hermes Teal) dashboard theme;
-     ThemeProvider rewrites them as inline styles when a user switches themes. */
+  /* RoleFit (default theme) — Apple-style LIGHT palette painted directly.
+     These :root defaults match `rolefitTheme` in src/themes/presets.ts so a
+     fresh load is light + glass with no flash of the old dark teal before
+     ThemeProvider applies the theme. ThemeProvider rewrites every one of
+     these as inline styles when the user switches themes.
+
+     `--foreground-alpha: 0` keeps the <Backdrop /> inversion layer a no-op —
+     we paint light directly rather than inverting a dark stack. */
   --foreground: color-mix(in srgb, #ffffff 0%, transparent);
   --foreground-base: #ffffff;
   --foreground-alpha: 0;
-  --midground: color-mix(in srgb, #ffe6cb 100%, transparent);
-  --midground-base: #ffe6cb;
+  --midground: color-mix(in srgb, #1d1d1f 100%, transparent);
+  --midground-base: #1d1d1f;
   --midground-alpha: 1;
-  --background: color-mix(in srgb, #041c1c 100%, transparent);
-  --background-base: #041c1c;
+  --background: color-mix(in srgb, #f5f5f7 100%, transparent);
+  --background-base: #f5f5f7;
   --background-alpha: 1;
 
-  /* Consumed by <Backdrop />; also theme-switchable. */
-  --warm-glow: rgba(255, 189, 56, 0.35);
-  --noise-opacity-mul: 1;
+  /* Consumed by <Backdrop />; also theme-switchable. Soft cool glow. */
+  --warm-glow: rgba(0, 113, 227, 0.05);
+  --noise-opacity-mul: 0;
 
-  /* Typography tokens — rewritten by ThemeProvider. Defaults match the
-     system stack so themes that don't override look native. */
-  --theme-font-sans: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --theme-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo,
-    Consolas, monospace;
+  /* Typography tokens — rewritten by ThemeProvider. Defaults to Apple's
+     system stack so the chrome reads native before the theme applies. */
+  --theme-font-sans: "Inter", -apple-system, "SF Pro Display", "SF Pro Text",
+    system-ui, "Segoe UI", Roboto, sans-serif;
+  --theme-font-mono: ui-monospace, "SF Mono", "SFMono-Regular",
+    "JetBrains Mono", Menlo, Consolas, monospace;
   --theme-font-display: var(--theme-font-sans);
-  --theme-base-size: 15px;
+  --theme-base-size: 16px;
   --theme-line-height: 1.55;
-  --theme-letter-spacing: 0;
+  --theme-letter-spacing: -0.011em;
 
   /* Layout tokens. */
-  --radius: 0.5rem;
-  --theme-radius: 0.5rem;
+  --radius: 1rem;
+  --theme-radius: 1rem;
   --theme-spacing-mul: 1;
   --theme-density: comfortable;
 
@@ -162,28 +167,31 @@ code { font-size: 0.875rem; }
      stay visible — in LENS_0, `--foreground` itself has alpha 0. */
   --color-foreground: var(--midground);
 
-  --color-card: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  /* Default surfaces are TRANSLUCENT white so the Liquid-Glass layer below
+     can frost them. ThemeProvider pins these to the rolefit colorOverrides
+     on load; these defaults keep a fresh paint glassy before that runs. */
+  --color-card: rgba(255, 255, 255, 0.62);
   --color-card-foreground: var(--midground);
   --color-primary: var(--midground);
   --color-primary-foreground: var(--background-base);
-  --color-secondary: color-mix(in srgb, var(--midground-base) 6%, var(--background-base));
+  --color-secondary: rgba(255, 255, 255, 0.55);
   --color-secondary-foreground: var(--midground);
-  --color-muted: color-mix(in srgb, var(--midground-base) 8%, var(--background-base));
+  --color-muted: color-mix(in srgb, var(--midground-base) 4.5%, transparent);
   /* Routes the shadcn `muted-foreground` slot through the DS semantic
      text-secondary token (defaults to midground 80%) so legacy call
      sites that use `text-muted-foreground` get a readable color
      instead of the old 55%-transparent default. */
   --color-muted-foreground: var(--color-text-secondary);
-  --color-accent: color-mix(in srgb, var(--midground-base) 10%, var(--background-base));
-  --color-accent-foreground: var(--midground);
-  --color-destructive: #fb2c36;
+  --color-accent: #0071e3;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #d70015;
   --color-destructive-foreground: #ffffff;
-  --color-success: #4ade80;
-  --color-warning: #ffbd38;
-  --color-border: color-mix(in srgb, var(--midground-base) 15%, transparent);
-  --color-input: color-mix(in srgb, var(--midground-base) 15%, transparent);
-  --color-ring: var(--midground);
-  --color-popover: color-mix(in srgb, var(--midground-base) 4%, var(--background-base));
+  --color-success: #1d8a3f;
+  --color-warning: #b25000;
+  --color-border: color-mix(in srgb, var(--midground-base) 10%, transparent);
+  --color-input: color-mix(in srgb, var(--midground-base) 12%, transparent);
+  --color-ring: #0071e3;
+  --color-popover: rgba(255, 255, 255, 0.78);
   --color-popover-foreground: var(--midground);
 
   --radius-sm: calc(var(--theme-radius) - 4px);
@@ -265,5 +273,217 @@ code { font-size: 0.875rem; }
 }
 :root[style*="--theme-asset-bg:"] .theme-default-filler {
   display: none;
+}
+
+/* ================================================================== */
+/* RoleFit — Liquid Glass                                              */
+/*                                                                    */
+/* The default theme is light. The app root is `bg-black`, so we paint */
+/* a soft cool off-white mesh on #root and hide the dark filler image  */
+/* so frosted surfaces have a light backdrop to blur. The whole layer  */
+/* is gated on the rolefit theme via the `[data-rf-glass]` marker we   */
+/* set in main.tsx (and matched here as a default), so switching to a  */
+/* dark built-in theme cleanly drops the glass treatment.              */
+/* ================================================================== */
+
+:root {
+  /* Liquid-glass tokens — one place to tune the whole material. */
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+  /* Tuned to match the Stitch reference: lighter, more translucent frosted
+     glass over the soft canvas. */
+  --glass-tint: rgba(255, 255, 255, 0.5);
+  --glass-tint-strong: rgba(255, 255, 255, 0.6);
+  --glass-hairline: rgba(255, 255, 255, 0.5);
+  --glass-edge: rgba(29, 29, 31, 0.07);
+  --glass-highlight: rgba(255, 255, 255, 0.5);
+  /* Apple-style soft layered shadow (ambient + key), from the Stitch design. */
+  --glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05),
+    0 2px 8px -1px rgba(0, 0, 0, 0.03);
+}
+
+body[data-rf-glass="true"] {
+  /* Soft cool mesh so frosted glass reads. Layered radial washes over the
+     #f5f5f7 canvas — barely-there, never loud. */
+  background-color: #f5f5f7;
+  background-image:
+    radial-gradient(60rem 60rem at 12% -8%, rgba(0, 113, 227, 0.06), transparent 60%),
+    radial-gradient(50rem 50rem at 100% 0%, rgba(120, 100, 230, 0.05), transparent 55%),
+    radial-gradient(70rem 70rem at 50% 120%, rgba(0, 113, 227, 0.04), transparent 60%),
+    linear-gradient(180deg, #fbfbfd 0%, #f3f3f6 100%);
+  background-attachment: fixed;
+}
+
+/* The app root paints `bg-black`; under the glass theme we make it
+   transparent so the body mesh shows through, and hide the dark
+   inverted filler image so it doesn't darken the canvas. */
+body[data-rf-glass="true"] #root {
+  background: transparent;
+}
+body[data-rf-glass="true"] .theme-default-filler {
+  display: none !important;
+}
+
+/* Neutralise the <Backdrop /> lens stack under the glass theme. Those layers
+   (deep-canvas + filler + warm vignette + FG inversion + noise) all use
+   `mix-blend-mode: difference` to flip a dark stack into the teal look; on a
+   light canvas they'd darken/invert the mesh. We hide them and let the body
+   mesh be the sole canvas. */
+body[data-rf-glass="true"] [data-backdrop-layer] {
+  display: none !important;
+}
+
+/* The root flex container in App.tsx is `bg-black`; neutralise it so the
+   body mesh is visible behind every translucent surface. */
+body[data-rf-glass="true"] #root > div {
+  background-color: transparent;
+}
+
+/* --- Frosted structural chrome: sidebar + headers --- */
+body[data-rf-glass="true"] #app-sidebar,
+body[data-rf-glass="true"] header {
+  background: var(--glass-tint-strong) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-color: var(--glass-edge);
+}
+body[data-rf-glass="true"] #app-sidebar {
+  box-shadow: 1px 0 0 var(--glass-hairline) inset,
+    var(--glass-shadow);
+}
+
+/* --- Frosted surface classes used across the pages --- */
+/* bg-card / bg-popover / bg-secondary already resolve to translucent
+   tints via the color tokens; add the blur + hairline + top highlight so
+   they read as real glass rather than flat semi-transparent fills. */
+body[data-rf-glass="true"] .bg-card,
+body[data-rf-glass="true"] .bg-popover,
+body[data-rf-glass="true"] .bg-secondary,
+body[data-rf-glass="true"] [class*="bg-card/"],
+body[data-rf-glass="true"] [class*="bg-background/"] {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-shadow);
+  position: relative;
+}
+
+/* Subtle top inner highlight — the signature Apple glass sheen. Applied to
+   real surface cards (skip table/background washes to avoid clipping). */
+body[data-rf-glass="true"] .bg-card::before,
+body[data-rf-glass="true"] .bg-popover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 1px 0 var(--glass-highlight) inset;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-rf-glass="true"] {
+    background-attachment: scroll;
+  }
+}
+
+/* ==================================================================== */
+/*  RoleFit craft layer — typography + depth.                           */
+/*  (1) Kills the Hermes brand chrome fonts: `font-compressed` /        */
+/*      `font-mondwest` (condensed + pixel display faces) and the       */
+/*      `text-display` utility's UPPERCASE + wide tracking that made     */
+/*      every button / badge / heading read like a terminal. Forces the */
+/*      clean Apple sans, normal case, tight tracking everywhere chrome. */
+/*  Real code (`code/kbd/pre/samp`) keeps the mono face on purpose.     */
+/* ==================================================================== */
+body :is(.font-compressed, .font-mondwest, .font-expanded, .text-display, .font-collapse) {
+  font-family: var(--theme-font-sans) !important;
+  text-transform: none !important;
+  letter-spacing: -0.006em !important;
+  font-feature-settings: "ss01", "cv01", "cv11";
+}
+/* Page-header + section titles: confident, high-contrast, not faint. */
+body :is(.font-compressed, .font-mondwest, .font-expanded, .text-display) {
+  font-weight: 600;
+}
+
+/* ---- Depth / elevation system (gated to the RoleFit light theme) ---- */
+:root {
+  /* Elevation tuned to the Stitch "apple-shadow" scale. */
+  --rf-e1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px -1px rgba(0, 0, 0, 0.03);
+  --rf-e2: 0 4px 24px -1px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.03);
+  --rf-e3: 0 10px 40px -10px rgba(0, 0, 0, 0.10), 0 4px 12px -4px rgba(0, 0, 0, 0.05);
+  --rf-press: inset 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Cards / panels: real resting elevation + crisp hairline + hover lift. */
+body[data-rf-glass="true"] :is(.bg-card, [class*="bg-card/"]) {
+  box-shadow: var(--rf-e2);
+  border-color: var(--glass-edge);
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+}
+body[data-rf-glass="true"] :is(.bg-card, [class*="bg-card/"]):hover {
+  box-shadow: var(--rf-e3);
+  transform: translateY(-1px);
+}
+
+/* Action buttons (the @nous Button carries `.text-display`). Give them a
+   layered surface, an inset top-highlight, a drop shadow, and a tactile
+   press — depth on every button, as asked. */
+body[data-rf-glass="true"] button.text-display {
+  position: relative;
+  border-radius: var(--radius-md);
+  box-shadow: var(--rf-e2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: box-shadow 0.18s ease, transform 0.12s ease, filter 0.18s ease;
+}
+body[data-rf-glass="true"] button.text-display:hover {
+  box-shadow: var(--rf-e3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+body[data-rf-glass="true"] button.text-display:active {
+  transform: translateY(0);
+  box-shadow: var(--rf-e1), var(--rf-press);
+}
+/* Outlined / ghost buttons sit on glass — softer shell so the highlight
+   doesn't look like a filled chip. */
+body[data-rf-glass="true"] button.text-display:where(.bg-transparent, [class*="bg-card"], [class*="border"]) {
+  background-color: var(--glass-tint);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+}
+
+/* Pills / chips / icon buttons authored in the pages (raw <button> with a
+   rounded shape): subtle interactive depth, no heavy slab. */
+body[data-rf-glass="true"] button:is(.rounded-full, .rounded-lg, .rounded-xl):not(.text-display) {
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+body[data-rf-glass="true"] button:is(.rounded-full, .rounded-lg, .rounded-xl):not(.text-display):hover {
+  box-shadow: var(--rf-e1);
+}
+
+/* Inputs / textareas: inset depth + a soft focus glow (Apple blue). */
+body[data-rf-glass="true"] :is(input, textarea) {
+  background-color: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 2px rgba(29, 29, 31, 0.05);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+body[data-rf-glass="true"] :is(input, textarea):focus,
+body[data-rf-glass="true"] :is(input, textarea):focus-visible {
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 2px rgba(29, 29, 31, 0.04),
+    0 0 0 3px rgba(0, 113, 227, 0.18);
+  outline: none;
+}
+
+/* Badges / status pills: soft elevated capsule rather than wide-tracked caps. */
+body[data-rf-glass="true"] span.text-display {
+  border-radius: 9999px;
+  padding-inline: 0.5rem;
+  box-shadow: var(--rf-e1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-rf-glass="true"] :is(.bg-card, [class*="bg-card/"], button.text-display):hover {
+    transform: none;
+  }
 }
 

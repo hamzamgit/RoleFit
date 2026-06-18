@@ -209,6 +209,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# RoleFit-AI API (people/jobs/analyses). Kept in the isolated `rolefit` package
+# and mounted here with a guarded import so a missing/broken RoleFit module can
+# never take down the core Hermes dashboard. Routes live under /api/rolefit/* and
+# are gated by the same session-token auth middleware as the rest of /api/.
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    _repo_root = str(_Path(__file__).resolve().parent.parent)
+    if _repo_root not in _sys.path:
+        _sys.path.insert(0, _repo_root)
+    from rolefit.api import router as _rolefit_router
+
+    app.include_router(_rolefit_router)
+    logging.getLogger(__name__).info("RoleFit API mounted at /api/rolefit")
+except Exception as _rolefit_exc:  # pragma: no cover - optional product layer
+    logging.getLogger(__name__).warning("RoleFit API not mounted: %s", _rolefit_exc)
+
 # ---------------------------------------------------------------------------
 # Endpoints that do NOT require the session token.  Everything else under
 # /api/ is gated by the auth middleware below.
@@ -475,7 +493,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "dashboard.theme": {
         "type": "select",
         "description": "Web dashboard visual theme",
-        "options": ["default", "midnight", "ember", "mono", "cyberpunk", "rose"],
+        "options": ["rolefit", "default", "midnight", "ember", "mono", "cyberpunk", "rose"],
     },
     "display.resume_display": {
         "type": "select",

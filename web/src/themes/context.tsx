@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { BUILTIN_THEMES, defaultTheme } from "./presets";
+import { BUILTIN_THEMES, defaultTheme, rolefitTheme } from "./presets";
 import {
   FONT_CHOICES,
   THEME_DEFAULT_FONT_ID,
@@ -51,7 +51,17 @@ const THEME_NAME_ALIASES: Record<string, string> = {
   "lens-5i": "nous-blue",
 };
 
+/** RoleFit ships a single premium-light theme. Any legacy Hermes built-in a
+ *  user still has persisted in localStorage / server config is folded into
+ *  `rolefit` so the product always paints the new look. (Other themes stay
+ *  registered — just not selected by default.) Custom user themes pass through. */
+const LEGACY_HERMES_THEMES = new Set([
+  "default", "default-large", "nous-blue", "midnight",
+  "ember", "mono", "cyberpunk", "rose", "lens-5i",
+]);
+
 function migrateThemeName(name: string): string {
+  if (LEGACY_HERMES_THEMES.has(name)) return "rolefit";
   return THEME_NAME_ALIASES[name] ?? name;
 }
 
@@ -391,6 +401,13 @@ function applyTheme(theme: DashboardTheme) {
   applyCustomCSS(theme.customCSS);
   applyLayoutVariant(theme.layoutVariant);
 
+  // Toggle the Liquid-Glass treatment (index.css `body[data-rf-glass]`)
+  // on for the RoleFit light theme only — other built-ins are dark and
+  // must not get the frosted-white chrome + light mesh canvas.
+  if (typeof document !== "undefined") {
+    document.body.dataset.rfGlass = theme.name === "rolefit" ? "true" : "false";
+  }
+
   // Terminal background — read by ChatPage via useTheme(); also available as CSS var.
   root.style.setProperty(
     "--theme-terminal-background",
@@ -409,8 +426,8 @@ function applyTheme(theme: DashboardTheme) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   /** Name of the currently active theme (built-in id or user YAML name). */
   const [themeName, setThemeName] = useState<string>(() => {
-    if (typeof window === "undefined") return "default";
-    const stored = window.localStorage.getItem(STORAGE_KEY) ?? "default";
+    if (typeof window === "undefined") return "rolefit";
+    const stored = window.localStorage.getItem(STORAGE_KEY) ?? "rolefit";
     const migrated = migrateThemeName(stored);
     // Write the migrated name back so future reads converge on the new
     // key and we eventually retire the alias entry.
@@ -495,6 +512,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
         if (resp.active) {
           const migratedActive = migrateThemeName(resp.active);
+          // RoleFit is the client default. If the user has never explicitly
+          // picked a theme (no localStorage entry) and the server only knows
+          // the legacy Hermes "default", don't let it clobber RoleFit — push
+          // RoleFit up instead so the light glass look is sticky out of the box.
+          const hasExplicitChoice =
+            window.localStorage.getItem(STORAGE_KEY) != null;
+          if (!hasExplicitChoice && migratedActive === "default") {
+            window.localStorage.setItem(STORAGE_KEY, "rolefit");
+            api.setTheme("rolefit").catch(() => {});
+            return;
+          }
           if (migratedActive !== themeName) {
             setThemeName(migratedActive);
             window.localStorage.setItem(STORAGE_KEY, migratedActive);
@@ -586,8 +614,8 @@ export function useTheme(): ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: defaultTheme,
-  themeName: "default",
+  theme: rolefitTheme,
+  themeName: "rolefit",
   availableThemes: Object.values(BUILTIN_THEMES).map((t) => ({
     name: t.name,
     label: t.label,

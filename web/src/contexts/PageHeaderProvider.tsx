@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useState, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { CaretRight } from "@phosphor-icons/react";
 import { PageHeaderContext } from "./page-header-context";
 import { resolvePageTitle } from "@/lib/resolve-page-title";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,11 @@ export function PageHeaderProvider({
   const displayTitle = titleOverride ?? defaultTitle;
 
   const isChatRoute = pathname === "/chat" || pathname === "/chat/";
+  // The RoleFit Maestro page (/rolepilot) is also a full-height, internally-scrolling
+  // chat surface — its composer must stay pinned, so it shares the chat layout.
+  const isMaestroRoute =
+    pathname === "/rolepilot" || pathname.startsWith("/rolepilot/");
+  const isFullHeight = isChatRoute || isMaestroRoute;
   /** Env jump-nav is wide — stack below title on small screens so KEYS stays readable. */
   const isEnvRoute =
     pathname === "/env" || pathname.startsWith("/env/");
@@ -54,10 +60,10 @@ export function PageHeaderProvider({
         <header
           className={cn(
             "z-1 w-full shrink-0",
-            "box-border border-b border-current/20",
-            "bg-background-base/40 backdrop-blur-sm",
-            // Mobile stacks title + toolbar — fixed h-14 clips content; desktop stays one row.
-            "min-h-0 overflow-x-hidden overflow-y-visible py-3 sm:h-14 sm:min-h-[3.5rem] sm:overflow-hidden sm:py-0",
+            "box-border border-b border-border",
+            "bg-card/60 backdrop-blur-xl",
+            // Mobile stacks title + toolbar — fixed height clips content; desktop stays one row.
+            "min-h-0 overflow-x-hidden overflow-y-visible py-3 sm:h-16 sm:min-h-[4rem] sm:overflow-hidden sm:py-0",
           )}
           role="banner"
         >
@@ -79,16 +85,34 @@ export function PageHeaderProvider({
                     : "flex-row items-center",
               )}
             >
+              {/* Brand — logo mark + wordmark. Links home to a fresh RolePilot
+                  session. (Swap the inner Sparkle for the uploaded logo mark.) */}
+              <Link
+                to="/rolepilot"
+                aria-label="RoleFit — new RolePilot session"
+                className="group flex shrink-0 items-center gap-2.5"
+              >
+                <img
+                  src="/rolepilot-logo.svg"
+                  alt="RoleFit"
+                  className="size-9 shrink-0 object-contain transition-transform duration-200 group-hover:scale-105"
+                />
+              </Link>
+              <CaretRight
+                aria-hidden
+                weight="bold"
+                className="size-3.5 shrink-0 text-text-tertiary"
+              />
               <h1
                 className={cn(
-                  "font-expanded min-w-0 text-sm font-bold tracking-[0.08em] text-midground",
+                  "min-w-0 text-[1.3rem] font-semibold tracking-[-0.02em] text-foreground",
                   afterTitle && isEnvRoute
                     ? "max-w-full sm:min-w-0 sm:shrink sm:truncate"
                     : afterTitle
                       ? "shrink truncate"
                       : "truncate",
                 )}
-                style={{ mixBlendMode: "plus-lighter" }}
+                style={{ mixBlendMode: "normal" }}
               >
                 {displayTitle}
               </h1>
@@ -126,7 +150,7 @@ export function PageHeaderProvider({
             "min-h-0 w-full min-w-0 flex-1 flex flex-col",
             // Bottom inset for scrolled pages lives on the route outlet wrapper in
             // `App.tsx` (`w-full min-w-0`) so it pads scrollable content, not flex chrome.
-            isChatRoute
+            isFullHeight
               ? "overflow-hidden"
               : "overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]",
           )}

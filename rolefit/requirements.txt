@@ -1,0 +1,6 @@
+# RoleFit-specific deps — kept separate from Hermes pyproject to stay upstream-clean.
+# Install: uv pip install -r rolefit/requirements.txt
+python-docx==1.1.2     # Stage-2 CV (.docx) generation (Phase 4)
+# Apify is accessed via its REST API using httpx (already a Hermes dependency) —
+# the apify-client SDK is intentionally NOT used (version conflict with apify-shared).
+ddgs==9.0.0              # free web search (DuckDuckGo) for the Requirement Agent
