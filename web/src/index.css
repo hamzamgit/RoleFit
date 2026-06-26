@@ -425,30 +425,121 @@ body[data-rf-glass="true"] :is(.bg-card, [class*="bg-card/"]):hover {
   transform: translateY(-1px);
 }
 
-/* Action buttons (the @nous Button carries `.text-display`). Give them a
-   layered surface, an inset top-highlight, a drop shadow, and a tactile
-   press — depth on every button, as asked. */
-body[data-rf-glass="true"] button.text-display {
-  position: relative;
-  border-radius: var(--radius-md);
-  box-shadow: var(--rf-e2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: box-shadow 0.18s ease, transform 0.12s ease, filter 0.18s ease;
-}
-body[data-rf-glass="true"] button.text-display:hover {
-  box-shadow: var(--rf-e3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  filter: brightness(1.04);
-  transform: translateY(-1px);
-}
-body[data-rf-glass="true"] button.text-display:active {
-  transform: translateY(0);
-  box-shadow: var(--rf-e1), var(--rf-press);
-}
-/* Outlined / ghost buttons sit on glass — softer shell so the highlight
-   doesn't look like a filled chip. */
-body[data-rf-glass="true"] button.text-display:where(.bg-transparent, [class*="bg-card"], [class*="border"]) {
-  background-color: var(--glass-tint);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  backdrop-filter: blur(12px) saturate(160%);
+/* ─── Premium pill-shaped buttons (Stitch-inspired) ───────────────────── */
+/*
+ * The @nous/ui Button renders as <button class="text-display"> with a
+ * component-level compound-variant system. Tailwind v4 puts utility
+ * classes in @layer utilities. By putting our rules in the SAME layer,
+ * specificity determines the winner — our (0,2,2) beats their (0,1,0).
+ *
+ * Pill shape  •  gradient fill  •  multi-layer depth  •  tactile press
+ */
+
+@layer utilities {
+  /* ==============================================================
+   *  SOLID — dark gradient pill, deep lift shadow
+   * ============================================================== */
+
+  /* Universal pill shape for ALL solid text-display buttons —
+     no data-rf-glass gate needed since RoleFit is the default theme. */
+  button.text-display:not(.bg-transparent):not(.shadow-midground) {
+    position: relative;
+    border-radius: 9999px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 60%),
+      linear-gradient(180deg, #2a2a2e 0%, #1d1d1f 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 4px 8px -2px rgba(0, 0, 0, 0.08),
+      0 8px 20px -6px rgba(0, 0, 0, 0.06);
+    transition:
+      box-shadow 0.20s cubic-bezier(0.25, 0.1, 0.25, 1),
+      transform 0.14s cubic-bezier(0.25, 0.1, 0.25, 1),
+      filter 0.20s ease,
+      background 0.20s ease;
+  }
+
+  button.text-display:not(.bg-transparent):not(.shadow-midground):hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+      0 2px 4px rgba(0, 0, 0, 0.08),
+      0 8px 16px -3px rgba(0, 0, 0, 0.10),
+      0 16px 32px -8px rgba(0, 0, 0, 0.08);
+    filter: brightness(1.06);
+    transform: translateY(-2px);
+  }
+
+  button.text-display:not(.bg-transparent):not(.shadow-midground):active:not(:disabled) {
+    transform: translateY(0) scale(0.975);
+    box-shadow:
+      inset 0 2px 5px rgba(0, 0, 0, 0.18),
+      inset 0 1px 1px rgba(0, 0, 0, 0.10),
+      0 1px 1px rgba(0, 0, 0, 0.04);
+    filter: brightness(0.93);
+  }
+
+  /* ==============================================================
+   *  OUTLINED — frosted glass pill
+   * ============================================================== */
+  body[data-rf-glass="true"] button.text-display:where(.shadow-midground) {
+    border-radius: 9999px;
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(20px) saturate(240%);
+    backdrop-filter: blur(20px) saturate(240%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.50),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 8px -2px rgba(0, 0, 0, 0.05),
+      0 8px 18px -6px rgba(0, 0, 0, 0.04);
+    transition:
+      box-shadow 0.20s cubic-bezier(0.25, 0.1, 0.25, 1),
+      transform 0.14s cubic-bezier(0.25, 0.1, 0.25, 1),
+      background 0.20s ease;
+  }
+
+  body[data-rf-glass="true"] button.text-display:where(.shadow-midground):hover:not(:disabled) {
+    background: var(--glass-tint-strong);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.60),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.03),
+      0 2px 4px rgba(0, 0, 0, 0.05),
+      0 8px 16px -3px rgba(0, 0, 0, 0.06),
+      0 14px 28px -8px rgba(0, 0, 0, 0.05);
+    filter: none;
+  }
+
+  /* ==============================================================
+   *  GHOST — invisible pill, subtle reveal
+   * ============================================================== */
+  body[data-rf-glass="true"] button.text-display:where(
+    .bg-transparent:not(.shadow-midground):not([class*="border"])
+  ) {
+    border-radius: 9999px;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  body[data-rf-glass="true"] button.text-display:where(
+    .bg-transparent:not(.shadow-midground):not([class*="border"])
+  ):hover:not(:disabled) {
+    background: rgba(29, 29, 31, 0.05);
+    box-shadow: none;
+    filter: none;
+    transform: none;
+  }
+
+  body[data-rf-glass="true"] button.text-display:where(
+    .bg-transparent:not(.shadow-midground):not([class*="border"])
+  ):active:not(:disabled) {
+    background: rgba(29, 29, 31, 0.10);
+    box-shadow: none;
+    transform: none;
+    filter: none;
+  }
 }
 
 /* Pills / chips / icon buttons authored in the pages (raw <button> with a

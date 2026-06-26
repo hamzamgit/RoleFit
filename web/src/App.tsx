@@ -55,6 +55,7 @@ import {
   Briefcase as PhBriefcase,
   Target as PhTarget,
   Kanban as PhKanban,
+  Gauge as PhGauge,
 } from "@phosphor-icons/react";
 import { Button } from "@nous-research/ui/ui/components/button";
 import { SelectionSwitcher } from "@nous-research/ui/ui/components/selection-switcher";
@@ -84,6 +85,7 @@ import ApplicantsPage from "@/pages/ApplicantsPage";
 import JobsPage from "@/pages/JobsPage";
 import MatchesPage from "@/pages/MatchesPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
+import DashboardPage from "@/pages/DashboardPage";
 import SetupChatPage from "@/pages/SetupChatPage";
 import LogsPage from "@/pages/LogsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
@@ -111,7 +113,7 @@ import { api } from "@/lib/api";
 import type { StatusResponse } from "@/lib/api";
 
 function RootRedirect() {
-  return <Navigate to="/rolepilot" replace />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
@@ -119,7 +121,7 @@ function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
     // Render nothing during the plugin-load window — a spinner here would just flash.
     return null;
   }
-  return <Navigate to="/rolepilot" replace />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 // Hidden from the RoleFit sidebar. The /chat route + persistent ChatPage
@@ -143,6 +145,7 @@ function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
  */
 const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
   "/": RootRedirect,
+  "/dashboard": DashboardPage,
   "/applicants": ApplicantsPage,
   "/jobs": JobsPage,
   "/matches": MatchesPage,
@@ -189,6 +192,7 @@ function ChatRouteSink() {
  * entries are preserved below (commented) for reference / easy restore.
  */
 const BUILTIN_NAV_REST: NavItem[] = [
+  { path: "/dashboard", label: "Dashboard", icon: PhGauge },
   { path: "/rolepilot", label: "RolePilot", icon: PhSparkle },
   { path: "/applicants", label: "Applicants", icon: PhIdentificationCard },
   { path: "/jobs", label: "Jobs", icon: PhBriefcase },
